@@ -72,11 +72,11 @@ GET:
 
  POST:
 
- 1- CREATE NEW REGISTER IN ONE JOURNAL => Indicate as query : "id_journal" AND as body json of ALL journal fields (columns) to create.
+ 1- CREATE NEW REGISTER IN ONE JOURNAL => Indicate as query : "id_journal" AND as body json with ALL journal fields (columns) to create.
 
  PUT:
 
- 1- UPDATE JOURNAL REGISTER => Indicate as query next params: "id_journal" , "id_reg" AND as body json of ALL journal fields (columns) to update.
+ 1- UPDATE JOURNAL REGISTER => Indicate as query next params: "id_journal" , "id_reg" AND as body json with ALL journal fields (columns) to update.
  
  DELETE: 
 
