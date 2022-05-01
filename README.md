@@ -1,11 +1,3 @@
---------------API ВОДАХРАНЕНИИ---------
-RUN IT: 
-If you need local server you need to download "XAMPP" and install driver sqlsrv for apache.
-
-REQUESTS:
-
-GET: 
-
 # <center>--------------API ВОДАХРАНЕНИИ---------</center>
 
 <!-- TABLE OF CONTENTS -->
