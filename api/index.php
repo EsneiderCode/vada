@@ -5,18 +5,78 @@ $conn = sqlsrv_connect($serverName, $connectionInfo);
 header("Content-Type: application/json");
 
 switch ($_SERVER['REQUEST_METHOD']) {
-    case 'POST':
+
+    case 'POST': //Create new register.
         $_POST = json_decode(file_get_contents('php://input'), true);
-        //DOING
+        $numColumns = count($_POST);
+        if (isset($_GET['id_journal'])) {
+            /*
+            Counting amount of columns in db for the given journal and
+            couting amount of elements in the body, they should match.
+             */
+            $idJournal = $_GET['id_journal'];
+            $newRegisterBody = $_POST;
+            $sql = "SELECT COUNT(*) FROM information_schema.columns where  table_name = 'jur_$idJournal'";
+            $query = sqlsrv_query($conn, $sql);
+            if ($query === false) {
+                die(print_r(sqlsrv_errors(), true));
+            }
+            $row = sqlsrv_fetch_array($query);
+            $numColumsInDb = array_unique($row)[0] - 1; // Without ID.
+            $amountParamsBody = count($newRegisterBody);
+            if ($numColumsInDb !== $amountParamsBody) {
+                $response = array("Status" => "ERROR: Given more or less columns for the table to create.");
+                die(print_r(json_encode($response), true));
+            }
+
+            //Creating the respective sql with respect to the number of columns in the table.
+            $insertSql = "( ";
+            for ($i = 1; $i <= $numColumsInDb; $i++) {
+                if ($i === $numColumsInDb) {
+                    $insertSql = $insertSql . "f$i ) ";
+                } else {
+                    $insertSql = $insertSql . "f$i , ";
+                }
+            }
+            $values = " VALUES ( ";
+            for ($i = 1; $i <= $numColumsInDb; $i++) {
+                $columUpdate = $newRegisterBody["f$i"];
+                if ($i === $numColumsInDb) {
+                    $values = $values . " $columUpdate )";
+                } else {
+                    $values = $values . " $columUpdate , ";
+                }
+            }
+
+            //Creating new register in journal in db.
+            $newsql = "INSERT INTO jur_$idJournal " . $insertSql . $values;
+            $newquery = sqlsrv_query($conn, $newsql);
+            if ($newquery === false) {
+                $response = array("Status" => "ERROR, register not created");
+                die(print_r(json_encode($response), true));
+            } else {
+                $newSql = "SELECT  max(uid) as id_reg FROM jur_$idJournal";
+                $query = sqlsrv_query($conn, $newSql);
+                if ($query === false) {
+                    die(print_r(sqlsrv_errors(), true));
+                }
+                $newRegister = sqlsrv_fetch_array($query);
+                $newRegister = $newRegister['id_reg'];
+                $response = array("Status" => "Success, register created: ", "id_rew" => "$newRegister");
+                echo json_encode($response);
+            }
+        }
         break;
-    case 'GET': //Get all journals || One journal by if its indicated journal id.
-        if (isset($_GET['id'], $_GET['from'], $_GET['to'])) {
-            $idJournal = $_GET['id'];
+
+    case 'GET': //Get INFORMATION about journals setting  minimun and maximun date.
+        if (isset($_GET['id_journal'], $_GET['from'], $_GET['to'])) {
+            $idJournal = $_GET['id_journal'];
             $forQueryDateFrom = $_GET['from'];
             $forQueryDateTo = $_GET['to'];
-            $sql = "SELECT *  FROM jur_$idJournal WHERE uid = $idJournal and CONVERT(DATE, f1) > '$forQueryDateFrom' and CONVERT(DATE, f1) < '$forQueryDateTo'";
+            $sql = "SELECT *  FROM jur_$idJournal WHERE CONVERT(DATE, f1) > '$forQueryDateFrom' and CONVERT(DATE, f1) < '$forQueryDateTo'";
             $query = sqlsrv_query($conn, $sql);
             $journal = [];
+
             if ($query === false) {
                 die(print_r(sqlsrv_errors(), true));
             }
@@ -27,9 +87,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 unset($row['uid']);
                 array_push($journal, $row);
             }
-            echo json_encode($journal, JSON_UNESCAPED_UNICODE);
-        } elseif (isset($_GET['struct'], $_GET['id'])) {
-            $idJournal = $_GET['id'];
+            echo json_encode($journal);
+            //Get STRUCTURE about journal by id.
+        } elseif (isset($_GET['struct'], $_GET['id_journal'])) {
+            $idJournal = $_GET['id_journal'];
             $sql = "SELECT * FROM jur_journal_struct where uid_lj = $idJournal";
             $query = sqlsrv_query($conn, $sql);
             $struct = [];
@@ -41,14 +102,16 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 array_push($struct, $row);
             }
             echo json_encode($struct);
-        } else {
-            //Getting all journals.
+
+        } else { //Get ALL journals.
+
             $sql = "SELECT  name, uid FROM jur_journal_list  order by name";
             $query = sqlsrv_query($conn, $sql);
             if ($query === false) {
                 die(print_r(sqlsrv_errors(), true));
             }
             $journals = [];
+
             while ($row = sqlsrv_fetch_array($query)) {
                 array_push($journals, array('id_journal' => $row['uid'], 'name' => $row['name']));
             }
@@ -80,54 +143,94 @@ switch ($_SERVER['REQUEST_METHOD']) {
                     }
                 }
             }
+
             echo json_encode($journals, JSON_UNESCAPED_UNICODE);
         }
         break;
+
     case 'PUT':
-        $_POST = json_decode(file_get_contents('php://input'), true);
-        if (!$_POST['jur_uid']) {
-            $shifr = $_POST['shifr'];
-            $sql = "insert jur_journal_list(name,type,shifr,report,kind,date_stop_calc) output inserted.uid values('$jurname','A','$shifr'," . ($is_report ? 1 : 0) . ",'$jurkind',$datestopcalc)";
-            $ds = sqlsrv_query($conn, $sql);
-            if (!$ds) {
-                //ppre(array($sql, sql_error_show(false, true)));
-                sqlsrv_rollback($conn);
-                exit();
+        //Update register of journal.
+        $_PUT = json_decode(file_get_contents('php://input'), true);
+        $numColumns = count($_PUT);
+        if (isset($_GET['id_journal'], $_GET['id_reg'])) {
+            $idJournal = $_GET['id_journal'];
+            $idRegister = $_GET['id_reg'];
+            $journalUpdate = $_PUT;
+            /*
+            Counting amount of columns in db for the given journal and
+            couting amount of elements in the body, they should match.
+             */
+            $sql = "SELECT COUNT(*) FROM information_schema.columns where  table_name = 'jur_$idJournal'";
+            $query = sqlsrv_query($conn, $sql);
+            if ($query === false) {
+                die(print_r(sqlsrv_errors(), true));
             }
-            $r = sqlsrv_fetch_array($ds);
-            echo $r;
-        } else {
-            $uid = round($_POST['jur_uid']);
-            $sql = "update jur_journal_list set name='$jurname',kind='$jurkind',date_stop_calc=$datestopcalc where uid=$uid ";
-            $ds = sqlsrv_query($conn, $sql);
-            if (!$ds) {
-                //ppre(array($sql, sql_error_show(false, true)));
-                sqlsrv_rollback($conn);
-                exit();
+            $row = sqlsrv_fetch_array($query);
+            $numColumsInDb = array_unique($row)[0] - 1; // Without ID.
+            $amountParamsBody = count($journalUpdate);
+            if ($numColumsInDb !== $amountParamsBody) {
+                $response = array("Status" => "ERROR: Given more or less columns for the table to update.");
+                die(print_r(json_encode($response), true));
+            }
+            //Creating the respective sql with respect to the number of columns in the table.
+            $values = "SET ";
+            for ($i = 1; $i <= $numColumsInDb; $i++) {
+                $columUpdate = $journalUpdate["f$i"];
+                if ($i === $numColumsInDb) {
+                    $values = $values . "f$i = $columUpdate";
+                } else {
+                    $values = $values . "f$i = $columUpdate" . ", ";
+                }
+            }
+            $newsql = "UPDATE jur_$idJournal " . $values . " WHERE uid = $idRegister";
+            $newquery = sqlsrv_query($conn, $newsql);
+            if ($newquery === false) {
+                die(print_r(sqlsrv_errors(), true));
             } else {
-                echo $ds;
+                $response = array("Status" => "Success, table updated");
+                echo json_encode($response);
             }
         }
         break;
-    case 'DELETE':
+
+    case 'DELETE': //Delete journal from jur_journal_list.
         $_DELETE = json_decode(file_get_contents('php://input'), true);
-        $idJournal = $_DELETE['id'];
-        $sql = "SELECT name FROM jur_journal_list where uid = $idJournal";
-        $query = sqlsrv_query($conn, $sql);
-        if ($query === false) {
-            die(print_r(sqlsrv_errors(), true));
+        if (isset($_DELETE['id_reg'], $_DELETE['id_journal'])) {
+            $idJournal = $_DELETE['id_journal'];
+            $idRegister = $_DELETE['id_reg'];
+            $sql = "SELECT uid FROM jur_$idJournal where uid = $idRegister";
+            $query = sqlsrv_query($conn, $sql);
+            if ($query === false) {
+                die(print_r(sqlsrv_errors(), true));
+            }
+            $reg = sqlsrv_fetch_array($query);
+            if ($reg != null) {
+                $deleteSql = "DELETE FROM jur_$idJournal where uid = $idRegister";
+                $deleteQuery = sqlsrv_query($conn, $deleteSql);
+                $response = array("status" => "Success");
+                echo json_encode($response);
+            } else {
+                $response = array("status" => "Error: register in journal not found.");
+                echo json_encode($response);
+            }
+        } elseif (isset($_DELETE['id_journal'])) {
+            $idJournal = $_DELETE['id_journal'];
+            $sql = "SELECT name FROM jur_journal_list where uid = $idJournal";
+            $query = sqlsrv_query($conn, $sql);
+            if ($query === false) {
+                die(print_r(sqlsrv_errors(), true));
+            }
+            $journal = sqlsrv_fetch_array($query);
+            if ($journal != null) {
+                $deleteSql = "DELETE FROM jur_journal_list where uid = $idJournal";
+                $deleteJournalQuery = sqlsrv_query($conn, $deleteSql);
+                $response = array("status" => "Success");
+                echo json_encode($response);
+            } else {
+                $response = array("status" => "Error: journal not found.");
+                echo json_encode($response);
+            }
+
+            break;
         }
-        $journal = sqlsrv_fetch_array($query);
-        if ($journal != null) {
-            $deleteSql = "DELETE FROM jur_journal_list where uid = $idJournal";
-            $deleteQuery = sqlsrv_query($conn, $deleteSql);
-            $response = array("status" => "Success");
-            echo json_encode($response);
-        } else {
-            $response = array("status" => "Error: journal not found.");
-            echo json_encode($response);
-        }
-        break;
-    default:
-        echo 'doing...';
 }
