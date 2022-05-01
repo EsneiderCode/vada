@@ -6,7 +6,7 @@ header("Content-Type: application/json");
 
 switch ($_SERVER['REQUEST_METHOD']) {
 
-    case 'POST': //Create new register.
+    case 'POST': //Create new register in journal.
         $_POST = json_decode(file_get_contents('php://input'), true);
         $numColumns = count($_POST);
         if (isset($_GET['id_journal'])) {
@@ -68,7 +68,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
         }
         break;
 
-    case 'GET': //Get INFORMATION about journals setting  minimun and maximun date.
+    case 'GET': //Get INFORMATION about one journal setting  minimun and maximun date.
         if (isset($_GET['id_journal'], $_GET['from'], $_GET['to'])) {
             $idJournal = $_GET['id_journal'];
             $forQueryDateFrom = $_GET['from'];
@@ -80,8 +80,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             if ($query === false) {
                 die(print_r(sqlsrv_errors(), true));
             }
-            while ($row = sqlsrv_fetch_array($query)) {
-                array_shift($row);
+            while ($row = sqlsrv_fetch_array($query, SQLSRV_FETCH_ASSOC)) {
                 $row['f1'] = date_format($row['f1'], 'Y-m-d');
                 $row['id_journal'] = $row['uid'];
                 unset($row['uid']);
@@ -98,7 +97,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             if ($query === false) {
                 die(print_r(sqlsrv_errors(), true));
             }
-            while ($row = sqlsrv_fetch_array($query)) {
+            while ($row = sqlsrv_fetch_array($query, SQLSRV_FETCH_ASSOC)) {
                 array_push($struct, $row);
             }
             echo json_encode($struct);
