@@ -65,21 +65,23 @@ To get a local copy up and running follow these simple example steps.
 ## REQUESTS: 
 
 GET: 
- 
  1- GET ALL JOURNALS => Just do request to get, don't indicate nothing else.
+
+ GET: 
  2- GET INFORMATION BY JOURNAL WITH MINIMUN AND MAXIMUN DATE =>  Indicate as query ALL next params : "id_journal", "from" , "to" .
+
+ GET:
  3- GET JOURNALS STRUCTURE => Indicate as query next params: "struct" , "id_journal".
 
  POST:
-
  1- CREATE NEW REGISTER IN ONE JOURNAL => Indicate as query : "id_journal" AND as body json with ALL journal fields (columns) to create.
 
  PUT:
-
  1- UPDATE JOURNAL REGISTER => Indicate as query next params: "id_journal" , "id_reg" AND as body json with ALL journal fields (columns) to update.
  
  DELETE: 
-
  1- DELETE JOURNAL REGISTER => indicate as body next params: "id_journal" , "id_reg".
+
+ DELETE:
  2- DELETE JOURNAL => Indicate as body next param: "id_journal"
  
