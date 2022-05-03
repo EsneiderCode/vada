@@ -41,6 +41,11 @@ switch ($_SERVER['REQUEST_METHOD']) {
             $values = " VALUES ( ";
             for ($i = 1; $i <= $numColumsInDb; $i++) {
                 $columUpdate = $newRegisterBody["f$i"];
+                if ($i === 1) {
+                    $tiempo = date('Y-m-d', strtotime($columUpdate));
+                    $values = $values . "'$tiempo', ";
+                    continue;
+                }
                 if ($i === $numColumsInDb) {
                     $values = $values . " $columUpdate )";
                 } else {
@@ -73,7 +78,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             $idJournal = $_GET['id_journal'];
             $forQueryDateFrom = $_GET['from'];
             $forQueryDateTo = $_GET['to'];
-            $sql = "SELECT *  FROM jur_$idJournal WHERE CONVERT(DATE, f1) > '$forQueryDateFrom' and CONVERT(DATE, f1) < '$forQueryDateTo'";
+            $sql = "SELECT *  FROM jur_$idJournal WHERE CONVERT(DATE, f1) >= '$forQueryDateFrom' and CONVERT(DATE, f1) <= '$forQueryDateTo'";
             $query = sqlsrv_query($conn, $sql);
             $journal = [];
 
@@ -175,10 +180,15 @@ switch ($_SERVER['REQUEST_METHOD']) {
             $values = "SET ";
             for ($i = 1; $i <= $numColumsInDb; $i++) {
                 $columUpdate = $journalUpdate["f$i"];
+                if ($i === 1) {
+                    $tiempo = date('Y-m-d', strtotime($columUpdate));
+                    $values = $values . "f$i = '$tiempo', ";
+                    continue;
+                }
                 if ($i === $numColumsInDb) {
-                    $values = $values . "f$i = $columUpdate";
+                    $values = $values . "f$i = $columUpdate ";
                 } else {
-                    $values = $values . "f$i = $columUpdate" . ", ";
+                    $values = $values . "f$i = $columUpdate, ";
                 }
             }
             $newsql = "UPDATE jur_$idJournal " . $values . " WHERE uid = $idRegister";
