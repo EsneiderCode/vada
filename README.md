@@ -88,6 +88,6 @@ GET:
  
  DELETE: 
 
- 1- DELETE JOURNAL REGISTER => indicate as query next params: "id_journal" , "id_reg".
- 2- DELETE JOURNAL => Indicate as query next param: "id_journal"
+ 1- DELETE JOURNAL REGISTER => indicate as body next params: "id_journal" , "id_reg".
+ 2- DELETE JOURNAL => Indicate as body next param: "id_journal"
  
