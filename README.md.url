@@ -72,14 +72,19 @@ GET:
 GET:
 2- GET INFORMATION BY JOURNAL WITH MINIMUN AND MAXIMUN DATE => Indicate as query ALL next params : "id_journal", "from" , "to" .
 
-GET:
-3- GET JOURNALS STRUCTURE => Indicate as query next params: "struct" , "id_journal".
+GET: 
+3- Get Name and Date by Journal Id => Indicate as query param: "id_journal" and "get_date" as true;
 
 GET:
-4- GET JOURNALS BVU => Indicate as query param : "journals_list_bvu" as true.
+4- GET JOURNALS STRUCTURE => Indicate as query next params: "struct" , "id_journal".
 
 GET:
-4- GET JOURNALS BY JOURNAL BVU => Indicate as query param: "id_journal_bvu" and id journal number.
+5- GET JOURNALS BVU => Indicate as query param : "journals_list_bvu" as true.
+
+GET:
+6- GET JOURNALS BY JOURNAL BVU => Indicate as query param: "id_journal_bvu" and id journal number.
+
+
 
 POST:
 1- CREATE NEW REGISTER IN ONE JOURNAL => Indicate as query : "id_journal" AND as body json with ALL journal fields (columns) to create.

@@ -1,9 +1,9 @@
 <?php
-// require '../config/dbconfig.php';
-include '../eais/config.php';
+require '../config/dbconfig.php';
+// include '../eais/config.php';
 
-// $conn = sqlsrv_connect($serverName, $connectionInfo);
-$conn = sqlsrv_connect($DBHost, $DBInfo);
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+// $conn = sqlsrv_connect($DBHost, $DBInfo);
 header("Content-Type: application/json");
 
 function utf8ize($d)
@@ -90,8 +90,42 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'GET':
 
+         if (isset($_GET['id_journal'], $_GET['get_date'])) {   //Get name and date about one journal.
+            $idJournal = $_GET['id_journal'];
+            $sql = "SELECT name  FROM jur_journal_list where uid = $idJournal";
+            $query = sqlsrv_query($conn, $sql);
+            $journal = [];
 
-        if (isset($_GET['id_journal'], $_GET['from'], $_GET['to'])) {
+            if ($query === false) {
+                die(print_r(sqlsrv_errors(), true));
+            }
+            while ($row = sqlsrv_fetch_array($query, SQLSRV_FETCH_ASSOC)) {
+                array_push($journal, $row);
+            }
+
+            //Getting minimun and maximun time date of journals.
+                $sqlDate = "SELECT uid, uid_lj, mindt as datestart, maxdt as dateend FROM jur_journal_date where uid_lj = $idJournal";
+                $newquery = sqlsrv_query($conn, $sqlDate);
+                if ($newquery === false) {
+                    die(print_r(sqlsrv_errors(), true));
+                }
+                $date = [];
+
+                //Removing hours from datetime.
+                while ($daterow = sqlsrv_fetch_array($newquery)) {
+                    $datestart = date_format($daterow['datestart'], 'Y-m-d');
+                    $dateend = date_format($daterow['dateend'], 'Y-m-d');
+                    $date = array("datestart" => $datestart, "dateend" => $dateend);
+                    array_push($journal[0],  $datestart,  $dateend);
+                }
+                $journal[0]['datestart'] = $journal[0]['0'];
+                unset($journal[0]['0']);
+                 $journal[0]['dateend'] = $journal[0]['1'];
+                unset($journal[0]['1']);
+
+            echo json_encode($journal);
+        
+        }else  if (isset($_GET['id_journal'], $_GET['from'], $_GET['to'])) {  //Get INFORMATION about one journal setting  minimun and maximun date.
             $idJournal = $_GET['id_journal'];
             $forQueryDateFrom = $_GET['from'];
             $forQueryDateTo = $_GET['to'];
@@ -109,28 +143,8 @@ switch ($_SERVER['REQUEST_METHOD']) {
                 array_push($journal, $row);
             }
             echo json_encode($journal);
-            //Get STRUCTURE about journal by id.
-        } else //Get INFORMATION about one journal setting  minimun and maximun date.
-            if (isset($_GET['id_journal'], $_GET['from'], $_GET['to'])) {
-                $idJournal = $_GET['id_journal'];
-                $forQueryDateFrom = $_GET['from'];
-                $forQueryDateTo = $_GET['to'];
-                $sql = "SELECT *  FROM jur_$idJournal WHERE CONVERT(DATE, f1) >= '$forQueryDateFrom' and CONVERT(DATE, f1) <= '$forQueryDateTo'";
-                $query = sqlsrv_query($conn, $sql);
-                $journal = [];
-
-                if ($query === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
-                while ($row = sqlsrv_fetch_array($query, SQLSRV_FETCH_ASSOC)) {
-                    $row['f1'] = date_format($row['f1'], 'Y-m-d');
-                    $row['id_journal'] = $row['uid'];
-                    unset($row['uid']);
-                    array_push($journal, $row);
-                }
-                echo json_encode($journal);
-                //Get STRUCTURE about journal by id.
-            } elseif (isset($_GET['struct'], $_GET['id_journal'])) {
+        
+        } elseif (isset($_GET['struct'], $_GET['id_journal'])) { //Get STRUCTURE about journal by id.
                 $idJournal = $_GET['id_journal'];
                 $sql = "SELECT * FROM jur_journal_struct where uid_lj = $idJournal";
                 $query = sqlsrv_query($conn, $sql);
@@ -150,14 +164,14 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
             } elseif (isset($_GET['journals_list_bvu'])) { //Get ALL journals BVU.
 
-                $sql = "SELECT * FROM spr_bvu  order by name_bvu";
+                $sql = "SELECT uid, name_bvu FROM spr_bvu  order by name_bvu";
                 $query = sqlsrv_query($conn, $sql);
                 if ($query === false) {
                     die(print_r(sqlsrv_errors(), true));
                 }
                 $journals = [];
 
-                while ($row = sqlsrv_fetch_array($query)) {
+                while ($row = sqlsrv_fetch_array($query, SQLSRV_FETCH_ASSOC)) {
                     array_push($journals, $row);
                 }
 
@@ -185,6 +199,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
                         }
                     }
                 }
+                
                 echo json_encode(utf8ize($journalsByBvu));
             }  
         break;
@@ -322,7 +337,7 @@ function allJournals ($conn) {
                     }
                 }
 
-                //
+                 //Adding BVU Id in Each Journal.
                 $sqlBvu = "SELECT uid, uid_bvu, uid_rfs  FROM spr_bvu_rfs order by uid_rfs";
                 $queryBvu = sqlsrv_query($conn, $sqlBvu);
                 if ($queryBvu === false) {
