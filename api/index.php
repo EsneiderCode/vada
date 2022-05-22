@@ -185,7 +185,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
                         }
                     }
                 }
-                echo json_encode($journalsByBvu);
+                echo json_encode(utf8ize($journalsByBvu));
             }  
         break;
 
