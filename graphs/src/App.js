@@ -1,5 +1,6 @@
+import Graphs from "./Graphs";
 import "./App.css";
-import Graphs from "./components/Graphs/index.js";
+
 function App() {
   return <Graphs />;
 }
