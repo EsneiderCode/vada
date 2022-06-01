@@ -1,5 +1,35 @@
 .container {
-    position: relative;
-    height: 100%;
-    width: 80vw;
+    background: #FFFFFF;
+    border-radius: 5px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    width: 800px;
+    height: 450px;
+    position: absolute;
+    top: 10%;
+    left: 20%;
+}
+
+.buttons-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.btn-download {
+    cursor: pointer;
+}
+
+@media screen and (max-width:1100px) {
+    .container {
+        left: 5%
+    }
+}
+
+@media screen and (max-width:600px) {
+    .container {
+        width: 500px;
+        height: 300px;
+        left: 10%
+    }
 }

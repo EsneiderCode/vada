@@ -14,7 +14,7 @@ import { Line } from "react-chartjs-2";
 import "./Graphs.css";
 import Axios from "axios";
 import { useState, useEffect } from "react";
-
+import { FaDownload } from "react-icons/fa";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -38,16 +38,11 @@ const options = {
       boxWidth: 50,
     },
   },
-  scales: {
-    xAxes: [
-      {
-        ticks: {
-          autoSkip: false,
-          maxRotation: 90,
-          minRotation: 90,
-        },
-      },
-    ],
+  plugins: {
+    title: {
+      display: true,
+      text: "Показатели режима водохранилища",
+    },
   },
 };
 
@@ -56,7 +51,7 @@ export default function LineChart() {
   const [labels, setLabels] = useState([]);
   const [labelWithDays, setLabelWithDays] = useState([]);
   const [labelOnlyMonths, setLabelOnlyMonths] = useState([]);
-  const [isLong, setIsLong] = useState(false);
+  const [isLong, setIsLong] = useState(true);
   useEffect(() => {
     getAllPlayers();
   }, []);
@@ -83,7 +78,7 @@ export default function LineChart() {
           f1.forEach((element) => {
             if (!labels.includes(element)) labels.push(element);
           });
-          setLabels(labels);
+          setLabels(f1);
           setScores(f2);
           setLabelWithDays(f1);
           setLabelOnlyMonths(labels);
@@ -104,9 +99,9 @@ export default function LineChart() {
   const data = {
     datasets: [
       {
-        label: "показатели режима водохранилища",
+        label: "Здесь оставить имя стольца.",
         data: scores,
-        tension: 0.9,
+        tension: 0.1,
         borderColor: "rgb(75, 192, 192)",
         pointRadius: 1,
         pointBackgroundColor: "rgb(75, 192, 192)",
@@ -118,23 +113,28 @@ export default function LineChart() {
 
   return (
     <div className="container">
-      <button type="button" onClick={downloadImage}>
-        Download
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          if (isLong) {
-            setLabels(labelOnlyMonths);
-            setIsLong(false);
-          } else {
-            setLabels(labelWithDays);
-            setIsLong(true);
-          }
-        }}
-      >
-        Only months
-      </button>
+      <div className="buttons-container">
+        <div>
+          <label for="no-repeat-labels"> Less labels</label>
+          <input
+            id="no-repeat-labels"
+            onClick={() => {
+              if (isLong) {
+                setLabels(labelOnlyMonths);
+                setIsLong(false);
+              } else {
+                setLabels(labelWithDays);
+                setIsLong(true);
+              }
+            }}
+            type="checkbox"
+          ></input>
+        </div>
+        <a className="btn-download">
+          <FaDownload onClick={downloadImage}></FaDownload>
+        </a>
+      </div>
+
       <Line ref={ref} data={data} options={options} />
     </div>
   );
